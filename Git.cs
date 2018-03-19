@@ -648,5 +648,39 @@ namespace KbgSoft.KBGit
 				}
 			}
 		}
+
+		public void CommandLineHandler(string[] args)
+		{
+			if (args.Length == 1)
+			{
+				if (args[0] == "init")
+				{
+					Init();
+				}
+
+				if (args[0] == "branch")
+				{
+					Branch();
+				}
+			}
+
+			if (args.Length == 2)
+			{
+				if (args[0] == "checkout")
+				{
+					if (Hd.Branches.ContainsKey(args[1]))
+					{
+						Checkout(args[1]);
+						return;
+					}
+					var id = new Id(args[1]);
+					if (Hd.Commits.ContainsKey(id))
+					{
+						Checkout(id);
+						return;
+					}
+				}
+			}
+		}
 	}
 }
