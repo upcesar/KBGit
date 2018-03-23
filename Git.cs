@@ -335,6 +335,34 @@ namespace KbgSoft.KBGit
 		}
 	}
 
+	public class CommandlineHandling
+	{
+		public static readonly Tuple<string[], Action<KBGit, string[]>>[] Configuration = 
+		{
+			new Tuple<string[], Action<KBGit,string[]>>(new[] {"git", "log"}, (git, args) => { git.Log();}),
+			new Tuple<string[], Action<KBGit,string[]>>(new[] {"git", "commit", "-m", "<message>"}, (git, args) => { git.Commit(args[3],"author",DateTime.Now, git.ScanFileSystem());}),
+		};
+
+		public void Handle(KBGit git, Tuple<string[], Action<KBGit, string[]>>[] config, string[] commandLineParameters)
+		{
+			var matchingConfig = config
+				.Where(x => x.Item1.Length == commandLineParameters.Length)
+				.SingleOrDefault(x => x.Item1.Zip(commandLineParameters, (conf, arg) => conf.StartsWith(@"<") || conf == arg).All(match => match));
+
+			var action = matchingConfig?.Item2;
+
+			if (action == null)
+				Console.WriteLine(CreateHelpText());
+			else
+				action(git, commandLineParameters);
+		}
+
+		public string CreateHelpText()
+		{
+			return $"KBGit Help\r\n----------\r\n{string.Join("\r\n", Configuration.Select(x => string.Join(" ", x.Item1)))}";
+		}
+	}
+
 	public static class ByteHelper
 	{
 		static readonly SHA256 Sha = SHA256.Create();
@@ -645,40 +673,6 @@ namespace KbgSoft.KBGit
 					Console.WriteLine($"\n\n{DateTime.Now}\n{e} - {e.Message}");
 					context.Response.StatusCode = 500;
 					context.Response.Close();
-				}
-			}
-		}
-
-		public void CommandLineHandler(string[] args)
-		{
-			if (args.Length == 1)
-			{
-				if (args[0] == "init")
-				{
-					Init();
-				}
-
-				if (args[0] == "branch")
-				{
-					Branch();
-				}
-			}
-
-			if (args.Length == 2)
-			{
-				if (args[0] == "checkout")
-				{
-					if (Hd.Branches.ContainsKey(args[1]))
-					{
-						Checkout(args[1]);
-						return;
-					}
-					var id = new Id(args[1]);
-					if (Hd.Commits.ContainsKey(id))
-					{
-						Checkout(id);
-						return;
-					}
 				}
 			}
 		}

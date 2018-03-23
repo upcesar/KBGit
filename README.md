@@ -1,7 +1,7 @@
 # KBGit - Git implemented from scratch in 500 lines of code (or less ...)
 
 Project statistics:  <!--start-->
-[![Stats](https://img.shields.io/badge/Code_lines-338-ff69b4.svg)]()
+[![Stats](https://img.shields.io/badge/Code_lines-354-ff69b4.svg)]()
 [![Stats](https://img.shields.io/badge/Doc_lines-22-ff69b4.svg)]()
 <!--end-->
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,7 +41,7 @@ namespace kbgit.tests
 
 		    var id = git.Commit("headless commit", "a", new DateTime(2010, 11, 12), git.ScanFileSystem());
 
-			Assert.Equal("48a24325bf46e633d025dbb88167e0ba867213d9c61f7ab7cb24b2af15450c00", id.ToString());
+			Assert.Equal("2ef282b36b6b71420c33b234ca74c4f185dc88948f6cbfa6164d01c5b2993448", id.ToString());
 	    }
 
 	    [Fact]
@@ -108,7 +107,7 @@ blob FeatureVolvo\door.txt", files);
 		[Fact]
 		public void Get_folders_and_files()
 	    {
-		    var repoBuilder = new RepoBuilder(@"c:\temp\");
+		    repoBuilder = new RepoBuilder(@"c:\temp\");
 		    var git = repoBuilder.BuildEmptyRepo();
 		    repoBuilder.AddFile(@"FeatureVolvo\car.txt", "car");
 		    repoBuilder.AddFile(@"FeatureGarden\tree.txt", "tree");
@@ -444,6 +443,82 @@ Log for origin/master
 				Thread.Sleep(50);
 
 			return server;
+		}
+	}
+
+	public class CommandHandlingTests
+	{
+		bool logWasMatched = false;
+		bool commitWasMatched = false;
+		readonly RepoBuilder repoBuilder = new RepoBuilder();
+
+		Tuple<string[], Action<KBGit, string[]>>[] GetTestConfiguraiton()
+		{
+			Tuple<string[], Action<KBGit, string[]>>[] configuration =
+			{
+				new Tuple<string[], Action<KBGit, string[]>>(new[] {"git", "log"}, (git, args) => { logWasMatched = true; }),
+				new Tuple<string[], Action<KBGit, string[]>>(new[] {"git", "commit", "<message>"}, (git, args) => { commitWasMatched = true; }),
+			};
+
+			return configuration;
+		}
+
+		[Fact]
+		public void When_printhelp_Then_all_commands_are_explained()
+		{
+			Assert.Equal(
+@"KBGit Help
+----------
+git log
+git commit -m <message>", new CommandlineHandling().CreateHelpText());
+		}
+
+		[Fact]
+		public void When_calling_with_specific_arguments_Then_match()
+		{
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git", "log" });
+
+			Assert.True(logWasMatched);
+		}
+		[Fact]
+		public void When_not_calling_with_unrecognized_arguments_Then_not_match()
+		{
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] {"git", "NOTLOG"});
+
+			Assert.False(logWasMatched);
+		}
+
+		[Fact]
+		public void When_not_calling_with_too_few_arguments_Then_not_match()
+		{
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git" });
+
+			Assert.False(logWasMatched);
+		}
+
+		[Fact]
+		public void When_not_calling_with_too_many_arguments_Then_not_match()
+		{
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git", "log", "too", "many", "args" });
+
+			Assert.False(logWasMatched);
+		}
+
+
+		[Fact]
+		public void When_calling_with_specific_argumenthole_Then_match()
+		{
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git", "log" });
+
+			Assert.True(logWasMatched);
+		}
+
+		[Fact]
+		public void When_not_calling_with_specific_argumenthole_Then_not_match()
+		{
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git", "NOTLOG" });
+
+			Assert.False(logWasMatched);
 		}
 	}
 }

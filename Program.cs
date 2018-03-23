@@ -24,8 +24,8 @@ namespace KbgSoft.KBGit {
 				Directory.Delete(path, true);
 			Directory.CreateDirectory(path);
 			
-			Call(@"c:\temp\kbgit\129837921734298\");
-
+			//Call(@"c:\temp\kbgit\129837921734298\");
+			var git = new KBGit("");
 			git.Init();
 			//git.CommandLineHandling("init");
 			File.WriteAllText(git.CodeFolder + "file.txt", "Hello world");
