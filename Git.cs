@@ -337,11 +337,21 @@ namespace KbgSoft.KBGit
 
 	public class CommandlineHandling
 	{
-		public static readonly Tuple<string[], Action<KBGit, string[]>>[] Configuration = 
+		public static (string[], Action<KBGit, string[]>)[] MakeConfig()
 		{
-			new Tuple<string[], Action<KBGit,string[]>>(new[] {"git", "log"}, (git, args) => { git.Log();}),
-			new Tuple<string[], Action<KBGit,string[]>>(new[] {"git", "commit", "-m", "<message>"}, (git, args) => { git.Commit(args[3],"author",DateTime.Now, git.ScanFileSystem());}),
-		};
+			return new (string[], Action<KBGit, string[]>)[]
+			{
+				(new[] {"git", "init"}, (git, args) => { git.Init(); }),
+				(new[] {"git", "commit", "-m", "<message>"}, (git, args) => { git.Commit(args[3], "author", DateTime.Now, git.ScanFileSystem()); }),
+				(new[] {"git", "log"}, (git, args) => { git.Log(); }),
+				(new[] {"git", "checkout", "-b", "<branchname>"}, (git, args) => { git.CheckOut_b(args[3]); }),
+				(new[] {"git", "checkout", "-b", "<branchname>", "<id>"}, (git, args) => { git.CheckOut_b(args[3], new Id(args[4])); }),
+				(new[] {"git", "checkout", "<id>"}, (git, args) => { git.Checkout(new Id(args[3])); }),
+				(new[] {"git", "branch", "-D", "<branchname>"}, (git, args) => { git.Branch_D(args[3]); }),
+				(new[] {"git", "branch"}, (git, args) => { git.Branch(); }),
+				(new[] {"git", "gc" }, (git, args) => { git.Gc(); }),
+			};
+		}
 
 		public void Handle(KBGit git, Tuple<string[], Action<KBGit, string[]>>[] config, string[] commandLineParameters)
 		{
@@ -359,7 +369,7 @@ namespace KbgSoft.KBGit
 
 		public string CreateHelpText()
 		{
-			return $"KBGit Help\r\n----------\r\n{string.Join("\r\n", Configuration.Select(x => string.Join(" ", x.Item1)))}";
+			return $"KBGit Help\r\n----------\r\n{string.Join("\r\n", MakeConfig().Select(x => string.Join(" ", x.Item1)))}";
 		}
 	}
 
@@ -631,9 +641,10 @@ namespace KbgSoft.KBGit
 
 		public void Serve(int port)
 		{
+			Console.WriteLine($"Serving on http://localhost:{port}/");
+
 			listener = new HttpListener();
 			listener.Prefixes.Add($"http://localhost:{port}/");
-			Console.WriteLine($"Serving on http://localhost:{port}/");
 			listener.Start();
 
 			Running = true;

@@ -452,7 +452,7 @@ Log for origin/master
 		bool commitWasMatched = false;
 		readonly RepoBuilder repoBuilder = new RepoBuilder();
 
-		Tuple<string[], Action<KBGit, string[]>>[] GetTestConfiguraiton()
+		Tuple<string[], Action<KBGit, string[]>>[] GetTestConfigurationStub()
 		{
 			Tuple<string[], Action<KBGit, string[]>>[] configuration =
 			{
@@ -466,59 +466,73 @@ Log for origin/master
 		[Fact]
 		public void When_printhelp_Then_all_commands_are_explained()
 		{
+			var helpText = new CommandlineHandling().CreateHelpText();
 			Assert.Equal(
 @"KBGit Help
 ----------
+git init
+git commit -m <message>
 git log
-git commit -m <message>", new CommandlineHandling().CreateHelpText());
+git checkout -b <branchname>
+git checkout -b <branchname> <id>
+git checkout <id>
+git branch -D <branchname>
+git branch
+git gc", helpText);
 		}
 
 		[Fact]
 		public void When_calling_with_specific_arguments_Then_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git", "log" });
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git", "log" });
 
 			Assert.True(logWasMatched);
+			Assert.False(commitWasMatched);
 		}
+
 		[Fact]
 		public void When_not_calling_with_unrecognized_arguments_Then_not_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] {"git", "NOTLOG"});
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] {"git", "NOTLOG"});
 
 			Assert.False(logWasMatched);
+			Assert.False(commitWasMatched);
 		}
 
 		[Fact]
-		public void When_not_calling_with_too_few_arguments_Then_not_match()
+		public void When_calling_with_too_few_arguments_Then_not_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git" });
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git" });
 
 			Assert.False(logWasMatched);
+			Assert.False(commitWasMatched);
 		}
 
 		[Fact]
-		public void When_not_calling_with_too_many_arguments_Then_not_match()
+		public void When_calling_with_too_many_arguments_Then_not_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git", "log", "too", "many", "args" });
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git", "log", "too", "many", "args" });
 
 			Assert.False(logWasMatched);
+			Assert.False(commitWasMatched);
 		}
-
 
 		[Fact]
 		public void When_calling_with_specific_argumenthole_Then_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git", "log" });
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git", "commit", "some message"});
 
-			Assert.True(logWasMatched);
+			Assert.False(logWasMatched);
+			Assert.True(commitWasMatched);
 		}
 
 		[Fact]
 		public void When_not_calling_with_specific_argumenthole_Then_not_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfiguraiton(), new[] { "git", "NOTLOG" });
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git", "commit" });
 
 			Assert.False(logWasMatched);
+			Assert.False(commitWasMatched);
 		}
 	}
 }
