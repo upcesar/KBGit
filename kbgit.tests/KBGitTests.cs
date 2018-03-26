@@ -437,7 +437,7 @@ Log for origin/master
 		GitServer SpinUpServer(KBGit git, int port)
 		{
 			var server = new GitServer(git);
-			t = new TaskFactory().StartNew(() => server.Serve(port));
+			t = new TaskFactory().StartNew(() => server.StartDaemon(port));
 
 			while (!server.Running.HasValue)
 				Thread.Sleep(50);

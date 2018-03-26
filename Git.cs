@@ -350,6 +350,9 @@ namespace KbgSoft.KBGit
 				("Delete a branch", new[] { "branch", "-D", "<branchname>"}, (git, args) => { git.Branch_D(args[3]); }),
 				("List existing branches", new[] { "branch"}, (git, args) => { git.Branch(); }),
 				("Garbage collect", new[] { "gc" }, (git, args) => { git.Gc(); }),
+				("Start git as a server", new[] { "daemon", "<port>" }, (git, args) => { new GitServer(git).StartDaemon(int.Parse(args[0])); }),
+				("Pull code", new[] { "pull", "<remote-name>", "<branch>"}, (git, args) => { new GitNetworkClient().PullBranch(git.Hd.Remotes.First(x => x.Name == args[0]), args[1], git);}),
+				("Push code", new[] { "push", "<remote-name>", "<branch>"}, (git, args) => { new GitNetworkClient().PushBranch(git.Hd.Remotes.First(x => x.Name == args[0]), args[1], git.Hd.Branches[args[1]], null, git.GetReachableNodes(git.Hd.Branches[args[1]].Tip).ToArray()); }),
 			};
 		}
 
@@ -637,7 +640,7 @@ namespace KbgSoft.KBGit
 			listener?.Abort();
 		}
 
-		public void Serve(int port)
+		public void StartDaemon(int port)
 		{
 			Console.WriteLine($"Serving on http://localhost:{port}/");
 
