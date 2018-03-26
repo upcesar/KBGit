@@ -452,12 +452,12 @@ Log for origin/master
 		bool commitWasMatched = false;
 		readonly RepoBuilder repoBuilder = new RepoBuilder();
 
-		Tuple<string[], Action<KBGit, string[]>>[] GetTestConfigurationStub()
+		(string, string[], Action<KBGit, string[]>)[] GetTestConfigurationStub()
 		{
-			Tuple<string[], Action<KBGit, string[]>>[] configuration =
+			(string, string[], Action<KBGit, string[]>)[] configuration =
 			{
-				new Tuple<string[], Action<KBGit, string[]>>(new[] {"git", "log"}, (git, args) => { logWasMatched = true; }),
-				new Tuple<string[], Action<KBGit, string[]>>(new[] {"git", "commit", "<message>"}, (git, args) => { commitWasMatched = true; }),
+				("make log", new[] {"log"}, (git, args) => { logWasMatched = true; }),
+				("make commit", new[] {"commit", "<message>"}, (git, args) => { commitWasMatched = true; }),
 			};
 
 			return configuration;
@@ -466,25 +466,25 @@ Log for origin/master
 		[Fact]
 		public void When_printhelp_Then_all_commands_are_explained()
 		{
-			var helpText = new CommandlineHandling().CreateHelpText();
+			var helpText = new CommandlineHandling().CreateHelpText(CommandlineHandling.MakeConfig());
 			Assert.Equal(
 @"KBGit Help
 ----------
-git init
-git commit -m <message>
-git log
-git checkout -b <branchname>
-git checkout -b <branchname> <id>
-git checkout <id>
-git branch -D <branchname>
-git branch
-git gc", helpText);
+git init                               - Initialize an empty repo
+git commit -m <message>                - Make a commit
+git log                                - Show the commit log
+git checkout -b <branchname>           - Create a new new branch at HEAD
+git checkout -b <branchname> <id>      - Create a new new branch at commit id
+git checkout <id>                      - Update HEAD
+git branch -D <branchname>             - Delete a branch
+git branch                             - List existing branches
+git gc                                 - Garbage collect", helpText);
 		}
 
 		[Fact]
 		public void When_calling_with_specific_arguments_Then_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git", "log" });
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "log" });
 
 			Assert.True(logWasMatched);
 			Assert.False(commitWasMatched);
@@ -493,7 +493,7 @@ git gc", helpText);
 		[Fact]
 		public void When_not_calling_with_unrecognized_arguments_Then_not_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] {"git", "NOTLOG"});
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] {"NOTLOG"});
 
 			Assert.False(logWasMatched);
 			Assert.False(commitWasMatched);
@@ -511,7 +511,7 @@ git gc", helpText);
 		[Fact]
 		public void When_calling_with_too_many_arguments_Then_not_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git", "log", "too", "many", "args" });
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "log", "too", "many", "args" });
 
 			Assert.False(logWasMatched);
 			Assert.False(commitWasMatched);
@@ -520,7 +520,7 @@ git gc", helpText);
 		[Fact]
 		public void When_calling_with_specific_argumenthole_Then_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git", "commit", "some message"});
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "commit", "some message"});
 
 			Assert.False(logWasMatched);
 			Assert.True(commitWasMatched);
@@ -529,7 +529,7 @@ git gc", helpText);
 		[Fact]
 		public void When_not_calling_with_specific_argumenthole_Then_not_match()
 		{
-			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "git", "commit" });
+			new CommandlineHandling().Handle(repoBuilder.EmptyRepo().Git, GetTestConfigurationStub(), new[] { "commit" });
 
 			Assert.False(logWasMatched);
 			Assert.False(commitWasMatched);

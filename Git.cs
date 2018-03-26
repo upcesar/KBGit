@@ -337,39 +337,37 @@ namespace KbgSoft.KBGit
 
 	public class CommandlineHandling
 	{
-		public static (string[], Action<KBGit, string[]>)[] MakeConfig()
+		public static (string, string[], Action<KBGit, string[]>)[] MakeConfig()
 		{
-			return new (string[], Action<KBGit, string[]>)[]
+			return new (string, string[], Action<KBGit, string[]>)[]
 			{
-				(new[] {"git", "init"}, (git, args) => { git.Init(); }),
-				(new[] {"git", "commit", "-m", "<message>"}, (git, args) => { git.Commit(args[3], "author", DateTime.Now, git.ScanFileSystem()); }),
-				(new[] {"git", "log"}, (git, args) => { git.Log(); }),
-				(new[] {"git", "checkout", "-b", "<branchname>"}, (git, args) => { git.CheckOut_b(args[3]); }),
-				(new[] {"git", "checkout", "-b", "<branchname>", "<id>"}, (git, args) => { git.CheckOut_b(args[3], new Id(args[4])); }),
-				(new[] {"git", "checkout", "<id>"}, (git, args) => { git.Checkout(new Id(args[3])); }),
-				(new[] {"git", "branch", "-D", "<branchname>"}, (git, args) => { git.Branch_D(args[3]); }),
-				(new[] {"git", "branch"}, (git, args) => { git.Branch(); }),
-				(new[] {"git", "gc" }, (git, args) => { git.Gc(); }),
+				("Initialize an empty repo", new[] { "init"}, (git, args) => { git.Init(); }),
+				("Make a commit", new[] { "commit", "-m", "<message>"}, (git, args) => { git.Commit(args[3], "author", DateTime.Now, git.ScanFileSystem()); }),
+				("Show the commit log", new[] { "log"}, (git, args) => { git.Log(); }),
+				("Create a new new branch at HEAD", new[] { "checkout", "-b", "<branchname>"}, (git, args) => { git.CheckOut_b(args[3]); }),
+				("Create a new new branch at commit id", new[] { "checkout", "-b", "<branchname>", "<id>"}, (git, args) => { git.CheckOut_b(args[3], new Id(args[4])); }),
+				("Update HEAD", new[] { "checkout", "<id>"}, (git, args) => { git.Checkout(new Id(args[3])); }),
+				("Delete a branch", new[] { "branch", "-D", "<branchname>"}, (git, args) => { git.Branch_D(args[3]); }),
+				("List existing branches", new[] { "branch"}, (git, args) => { git.Branch(); }),
+				("Garbage collect", new[] { "gc" }, (git, args) => { git.Gc(); }),
 			};
 		}
 
-		public void Handle(KBGit git, Tuple<string[], Action<KBGit, string[]>>[] config, string[] commandLineParameters)
+		public void Handle(KBGit git, (string, string[], Action<KBGit, string[]>)[] config, string[] commandLineParameters)
 		{
 			var matchingConfig = config
-				.Where(x => x.Item1.Length == commandLineParameters.Length)
-				.SingleOrDefault(x => x.Item1.Zip(commandLineParameters, (conf, arg) => conf.StartsWith(@"<") || conf == arg).All(match => match));
+				.Where(x => x.Item2.Length == commandLineParameters.Length)
+				.SingleOrDefault(x => x.Item2.Zip(commandLineParameters, (conf, arg) => conf.StartsWith(@"<") || conf == arg).All(match => match));
 
-			var action = matchingConfig?.Item2;
-
-			if (action == null)
-				Console.WriteLine(CreateHelpText());
+			if (matchingConfig.Item1 == null)
+				Console.WriteLine(CreateHelpText(config));
 			else
-				action(git, commandLineParameters);
+				matchingConfig.Item3(git, commandLineParameters);
 		}
 
-		public string CreateHelpText()
+		public string CreateHelpText((string, string[], Action<KBGit, string[]>)[] config)
 		{
-			return $"KBGit Help\r\n----------\r\n{string.Join("\r\n", MakeConfig().Select(x => string.Join(" ", x.Item1)))}";
+			return $"KBGit Help\r\n----------\r\ngit {string.Join("\r\ngit ", config.Select(x => $"{string.Join(" ", x.Item2),-34} - {x.Item1}"))}";
 		}
 	}
 
